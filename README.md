@@ -73,7 +73,7 @@ This will:
 
 ## Project Status
 
-Project is complete.All planned functionality—spawning the LLM, piping I/O, rendering a chat UI — is implemented.
+Project is complete.All planned functionality — spawning the LLM, piping I/O, rendering a chat UI — is implemented.
 
 ## Room for Improvement
 
