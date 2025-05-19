@@ -2,29 +2,32 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Local LLM Chat</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Local AI Chat</title>
 </head>
 
-<body class="bg-gray-900 text-white h-screen flex flex-col">
-    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-        <h1 class="text-7xl font-extrabold text-blue-500 opacity-50 drop-shadow-[0_0_40px_rgba(59,130,246,1)] select-none">
+<body class="flex flex-col h-screen bg-gray-900 text-white">
+    <div class="absolute flex inset-0 items-center justify-center pointer-events-none z-0">
+        <h1 class="drop-shadow-[0_0_40px_rgba(59,130,246,1)] font-extrabold opacity-50 select-none text-7xl text-blue-500">
             Local LLM Chat
         </h1>
     </div>
 
     <!-- Chat Area -->
-    <div id="chat" class="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-800 text-lg text-white leading-relaxed flex flex-col">
+    <div id="chat" class="bg-gray-800 flex flex-1 flex-col overflow-y-auto p-6 leading-relaxed space-y-4 text-lg text-white">
     </div>
 
     <!-- Input Bar -->
-    <form id="chat-form" class="p-4 bg-gray-900 border-t border-gray-700 flex">
-        <input id="prompt" type="text" placeholder="Type your message..." class="flex-1 px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" autocomplete="off" />
-        <button type="submit" class="ml-2 px-6 py-2 bg-gradient-to-br from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold rounded shadow-md transition-all duration-200 select-none focus:outline-none focus:ring-0"
+    <form id="chat-form" class="border-t bg-gray-900 border-gray-700 flex p-4">
+        <input id="prompt" type="text" placeholder="Type your message..." class="bg-gray-700 flex-1 px-4 py-2 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500" autocomplete="off" />
+        <button type="submit" class="bg-gradient-to-br font-semibold from-blue-500 hover:from-blue-600 hover:to-blue-800 ml-2 px-6 py-2 rounded shadow-md text-white to-blue-700 transition-all duration-200 select-none focus:outline-none focus:ring-0"
 >Send</button>
     </form>
+
     <script src="main.js"></script>
 </body>
 

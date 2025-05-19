@@ -1,4 +1,7 @@
 #include <civetweb.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -8,14 +11,18 @@
 
 #include "log.h"
 
+// Configuration
+#define MAX_RESPONSE_SIZE 4096
 #define LLM_CHAT_EXECUTABLE_NAME "llm_chat"
 #define SERVE_DIRECTORY "www"
 #define SERVER_PORT "8080"
 
-int to_child[ 2 ];   // Parent writes to child
-int from_child[ 2 ]; // Parent reads from child
+static int g_pipeToChild[ 2 ];
+static int g_pipeFromChild[ 2 ];
 
-static void trim( char** _string, const ssize_t _from, const ssize_t _to ) {
+static void truncateString( char** _string,
+                            const ssize_t _from,
+                            const ssize_t _to ) {
     if ( _from >= 0 ) {
         ( *_string ) += _from;
     }
@@ -122,7 +129,7 @@ static char* getApplicationDirectoryAbsolutePath( void ) {
             l_directoryPath = l_executablePath;
 
             // Do not move the beginning
-            trim( &l_directoryPath, -1, l_lastSlashIndex );
+            truncateString( &l_directoryPath, -1, l_lastSlashIndex );
 
             if ( !concatBeforeAndAfterString( &l_directoryPath, NULL, "/" ) ) {
                 free( l_directoryPath );
@@ -137,6 +144,63 @@ static char* getApplicationDirectoryAbsolutePath( void ) {
 EXIT:
     return ( l_returnValue );
 }
+
+// TODO: Dynamic response size
+#if 0
+static char* readFileDescriptorToString( int _fileDescriptor ) {
+    size_t l_capacity = 1024;
+    size_t l_length = 0;
+    char* l_buffer = ( char* )malloc( l_capacity * sizeof( char ) );
+
+    log( "TEST1\n" );
+
+    while ( true ) {
+        ssize_t l_readAmount = read( _fileDescriptor, ( l_buffer + l_length ),
+                                     ( l_capacity - l_length - 1 ) );
+
+        if ( l_readAmount > 0 ) {
+            l_length += l_readAmount;
+
+            if ( ( l_length + 1 ) >= l_capacity ) {
+                l_capacity *= 2;
+
+                char* l_tempBuffer = ( char* )realloc( l_buffer, l_capacity );
+
+                if ( !l_tempBuffer ) {
+                    free( l_buffer );
+
+                    log( "TEST3\n" );
+                    return ( NULL );
+                }
+
+                l_buffer = l_tempBuffer;
+            }
+
+        } else if ( l_readAmount == 0 ) {
+            // EOF
+            log( "TEST4\n" );
+            break;
+
+        } else if ( errno == EINTR ) {
+            // Retry
+            log( "TEST5\n" );
+            continue;
+
+        } else {
+            free( l_buffer );
+
+            log( "TEST6\n" );
+            return ( NULL );
+        }
+    }
+
+    l_buffer[ l_length ] = '\0';
+
+    log( "TEST2\n" );
+
+    return ( l_buffer );
+}
+#endif
 
 static bool openLLMChatExecutable( void ) {
     bool l_returnValue = false;
@@ -160,19 +224,39 @@ static bool openLLMChatExecutable( void ) {
             goto EXIT;
         }
 
-        pipe( to_child );
-        pipe( from_child );
+        pipe( g_pipeToChild );
+        pipe( g_pipeFromChild );
 
-        pid_t pid = fork();
+        pid_t l_processId = fork();
 
-        if ( pid == 0 ) {
+        if ( l_processId == 0 ) {
             // CHILD PROCESS
-            dup2( to_child[ 0 ], STDIN_FILENO );    // stdin - pipe read end
-            dup2( from_child[ 1 ], STDOUT_FILENO ); // stdout - pipe write end
+            dup2( g_pipeToChild[ 0 ], STDIN_FILENO ); // stdin - pipe read end
+            dup2( g_pipeFromChild[ 1 ],
+                  STDOUT_FILENO ); // stdout - pipe write end
+
+            int l_logFileDescriptor =
+                open( "log.txt",
+                      O_WRONLY       // Open for writing only
+                          | O_CREAT  // Create the file if it doesn’t exist
+                          | O_TRUNC, // Truncate (zero out) the file on open
+                      S_IRUSR        // owner has read permission (0400)
+                          | S_IWUSR  // owner has write permission (0200)
+                          | S_IRGRP  // group has read permission (0040)
+                          | S_IROTH  // others have read permission (0004)
+                );
+
+            if ( l_logFileDescriptor == -1 ) {
+                _exit( 1 );
+            }
+
+            dup2( l_logFileDescriptor, STDERR_FILENO );
+
+            close( l_logFileDescriptor );
 
             // Close unused ends
-            close( to_child[ 1 ] );
-            close( from_child[ 0 ] );
+            close( g_pipeToChild[ 1 ] );
+            close( g_pipeFromChild[ 0 ] );
 
             execlp( l_executablePath, l_executablePath, NULL );
 
@@ -183,8 +267,8 @@ static bool openLLMChatExecutable( void ) {
         } else {
             // PARENT PROCESS
             // Close unused ends
-            close( to_child[ 0 ] );
-            close( from_child[ 1 ] );
+            close( g_pipeToChild[ 0 ] );
+            close( g_pipeFromChild[ 1 ] );
         }
 
         free( l_executablePath );
@@ -197,21 +281,45 @@ EXIT:
 }
 
 static char* llm_generate( const char* _prompt ) {
-    // Write to child
-    const char* msg = "how to say hello?\n";
-    write( to_child[ 1 ], msg, strlen( msg ) );
+    log( "Prompt: %s\n", _prompt );
+    printf( "Prompt: %s\n", _prompt );
 
-    // Read from child
-    char buffer[ 2024 ];
-    ssize_t n = read( from_child[ 0 ], buffer, sizeof( buffer ) - 1 );
+    {
+        // Append new line
+        char* l_prompt = strdup( _prompt );
+        concatBeforeAndAfterString( &l_prompt, NULL, "\n" );
 
-    if ( n > 0 ) {
-        buffer[ n ] = '\0';
+        // Write to child
+        write( g_pipeToChild[ 1 ], l_prompt, strlen( l_prompt ) );
 
-        printf( "Child said: %s", buffer );
+        free( l_prompt );
     }
 
-    return ( strdup( buffer ) );
+    // TODO: Dynamic response size
+#if 0
+    char* l_response = readFileDescriptorToString( g_pipeFromChild[ 0 ] );
+
+    if ( !l_response ) {
+        log( "Failed to read from LLM chat\n" );
+
+        exit( 1 );
+    }
+#endif
+
+    char l_response[ MAX_RESPONSE_SIZE ];
+    ssize_t l_readAmount =
+        read( g_pipeFromChild[ 0 ], l_response, ( sizeof( l_response ) - 1 ) );
+
+    if ( l_readAmount == -1 ) {
+        exit( 1 );
+    }
+
+    l_response[ l_readAmount ] = '\0';
+
+    log( "LLM Response: %s", l_response );
+    printf( "LLM Response: %s", l_response );
+
+    return ( strdup( l_response ) );
 }
 
 static bool initServer( struct mg_context** _serverContext,
@@ -248,15 +356,121 @@ static bool quitServer( struct mg_context* _serverContext ) {
     return ( true );
 }
 
+static char* readRequestBody( struct mg_connection* _connection ) {
+    size_t l_capacity = 1024;
+    size_t l_length = 0;
+    char* l_buffer = ( char* )malloc( l_capacity * sizeof( char ) );
+
+    while ( true ) {
+        int l_readAmount = mg_read( _connection, ( l_buffer + l_length ),
+                                    ( l_capacity - l_length - 1 ) );
+
+        if ( l_readAmount ) {
+            l_length += l_readAmount;
+
+            if ( ( l_length + 1 ) >= l_capacity ) {
+                l_capacity *= 2;
+
+                char* l_tempBuffer = realloc( l_buffer, l_capacity );
+
+                if ( !l_tempBuffer ) {
+                    free( l_buffer );
+
+                    return ( NULL );
+                }
+
+                l_buffer = l_tempBuffer;
+            }
+
+        } else {
+            // EOF ( l_readAmount == 0 ) or Error ( l_readAmount < 0 )
+            break;
+        }
+    }
+
+    l_buffer[ l_length ] = '\0';
+
+    return ( l_buffer );
+}
+
+static char* extractPrompt( const char* _requestBody ) {
+    const char* l_promptStartIndex = strstr( _requestBody, "\"prompt\"" );
+
+    if ( !l_promptStartIndex ) {
+        return ( NULL );
+    }
+
+    l_promptStartIndex = strchr( l_promptStartIndex, ':' );
+
+    if ( !l_promptStartIndex ) {
+        return ( NULL );
+    }
+
+    // Skip ':'
+    l_promptStartIndex++;
+
+    while ( *l_promptStartIndex &&
+            isspace( ( unsigned char )*l_promptStartIndex ) ) {
+        l_promptStartIndex++;
+    }
+
+    if ( *l_promptStartIndex != '"' ) {
+        return ( NULL );
+    }
+
+    // Skip opening quote
+    l_promptStartIndex++;
+
+    // Find closing unescaped quote
+    const char* l_promptEndIndex = l_promptStartIndex;
+
+    while ( *l_promptEndIndex ) {
+        if ( ( *l_promptEndIndex == '"' ) &&
+             ( l_promptEndIndex[ -1 ] != '\\' ) ) {
+            break;
+        }
+
+        l_promptEndIndex++;
+    }
+
+    if ( *l_promptEndIndex != '"' ) {
+        return ( NULL );
+    }
+
+    size_t l_promptLength = ( l_promptEndIndex - l_promptStartIndex );
+    char* l_prompt = ( char* )malloc( ( l_promptLength + 1 ) * sizeof( char ) );
+
+    if ( !l_prompt ) {
+        return ( NULL );
+    }
+
+    strncpy( l_prompt, l_promptStartIndex, l_promptLength );
+
+    l_prompt[ l_promptLength ] = '\0';
+
+    // TODO: Unescape sequences in prompt
+
+    return ( l_prompt );
+}
+
 static int handleGenerate( struct mg_connection* _connection, void* _cbdata ) {
-    char buf[ 8192 ];
-    int len = mg_read( _connection, buf, sizeof( buf ) );
-    buf[ len ] = '\0';
+    ( void )( sizeof( _cbdata ) );
 
-    // Very simple JSON parse: look for "prompt"
-    char* p = strstr( buf, "\"prompt\"" );
+    char* l_requestBody = readRequestBody( _connection );
 
-    if ( !p ) {
+    if ( !l_requestBody ) {
+        mg_printf( _connection,
+                   "HTTP/1.1 500 Internal Server Error\r\n"
+                   "Content-Length: 0\r\n\r\n" );
+
+        return ( 500 );
+    }
+
+    char* l_prompt = extractPrompt( l_requestBody );
+
+    free( l_requestBody );
+
+    if ( !l_prompt ) {
         mg_printf( _connection,
                    "HTTP/1.1 400 Bad Request\r\n"
                    "Content-Type: text/plain\r\n"
@@ -266,44 +480,46 @@ static int handleGenerate( struct mg_connection* _connection, void* _cbdata ) {
         return ( 400 );
     }
 
-    // Extract prompt value ( naive )
-    p = strchr( p, ':' );
-    p = strchr( p, '"' ) + 1;
-    char* end = strchr( p, '"' );
-    size_t prompt_len = end - p;
-    char prompt[ 1024 ] = { 0 };
-    strncpy(
-        prompt, p,
-        prompt_len < sizeof( prompt ) - 1 ? prompt_len : sizeof( prompt ) - 1 );
+    char* l_response = llm_generate( l_prompt );
 
-    // Generate response
-    char* reply = llm_generate( prompt );
+    free( l_prompt );
 
-    if ( !reply ) {
+    if ( !l_response ) {
         mg_printf( _connection,
-                   "HTTP/1.1 400 Bad Request\r\n"
+                   "HTTP/1.1 502 Bad Gateway\r\n"
                    "Content-Type: text/plain\r\n"
                    "Content-Length: 11\r\n\r\n"
-                   "Bad Request" );
+                   "Server Error" );
 
-        return ( 400 );
+        return ( 502 );
     }
 
-    // Build JSON response
-    char response[ 8192 ];
-    int rlen = snprintf( response, sizeof( response ), "{\"response\": \"%s\"}",
-                         reply );
-    free( reply );
+    char* l_JSONResponse = NULL;
+    int l_JSONResponseLength =
+        asprintf( &l_JSONResponse, "{\"response\": \"%s\"}", l_response );
 
-    // Send HTTP response
+    free( l_response );
+
+    if ( ( l_JSONResponseLength < 0 ) || ( !l_JSONResponse ) ) {
+        mg_printf( _connection,
+                   "HTTP/1.1 500 Internal Server Error\r\n"
+                   "Content-Length: 0\r\n\r\n" );
+
+        free( l_JSONResponse );
+
+        return ( 500 );
+    }
+
     mg_printf( _connection,
                "HTTP/1.1 200 OK\r\n"
                "Content-Type: application/json\r\n"
                "Content-Length: %d\r\n\r\n"
                "%s",
-               rlen, response );
+               l_JSONResponseLength, l_JSONResponse );
 
-    return 200;
+    free( l_JSONResponse );
+
+    return ( 200 );
 }
 
 int main( void ) {

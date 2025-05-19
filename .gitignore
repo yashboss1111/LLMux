@@ -4,17 +4,12 @@
 **/.*~
 **/.*.swp
 
-# glad
-glad
-
 # Profiling
 **/*.gc*
 **/*.info
 
-# Binary
+# Misc
 **/*.o
 **/out
 **/*vgcore*
-
-# In-progress
-Style_Guide.md
+**/log.txt
