@@ -93,4 +93,4 @@ Created by [@lurkydismal](https://github.com/lurkydismal) - feel free to contact
 ## License
 
 This project is open source and available under the
-[GNU Affero General Public License v3.0](https://github.com/lurkydismal/bookish-octo-waddle/blob/main/LICENSE).
+[GNU Affero General Public License v3.0](https://github.com/lurkydismal/LLMux/blob/main/LICENSE).
