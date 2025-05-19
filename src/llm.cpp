@@ -163,50 +163,15 @@ EXIT:
     return ( l_returnValue );
 }
 
-int main( void ) {
-    // Only print errors
-    llama_log_set(
-        []( enum ggml_log_level _level, const char* _text, void* _data ) {
-            if ( _level >= GGML_LOG_LEVEL_ERROR ) {
-                fprintf( stderr, "%s", _text );
-            }
-        },
-        nullptr );
-
-    // Load dynamic backends
-    ggml_backend_load_all();
-
-    // Initialize the model
-    llama_model_params model_params = llama_model_default_params();
-    model_params.n_gpu_layers = GPU_LAYERS;
-
-    char* modelPath = getApplicationDirectoryAbsolutePath();
-
-    concatBeforeAndAfterString( &modelPath, NULL, MODEL_PATH );
-
-    llama_model* model = llama_model_load_from_file( modelPath, model_params );
-
-    free( modelPath );
-
-    if ( !model ) {
-        log( "Unable to load model\n" );
-
-        return ( 1 );
-    }
-
-    const llama_vocab* vocab = llama_model_get_vocab( model );
-
-    // Initialize the context
-    llama_context_params ctx_params = llama_context_default_params();
-    ctx_params.n_ctx = CONTEXT_SIZE;
-    ctx_params.n_batch = CONTEXT_SIZE;
-
+void chat( llama_model* model,
+           const llama_vocab* vocab,
+           llama_context_params ctx_params ) {
     llama_context* ctx = llama_init_from_model( model, ctx_params );
 
     if ( !ctx ) {
         log( "Failed to create the llama_context\n" );
 
-        return ( 1 );
+        return;
     }
 
     // Initialize the sampler
@@ -318,7 +283,7 @@ int main( void ) {
         if ( new_len < 0 ) {
             log( "Failed to apply the chat template\n" );
 
-            return ( 1 );
+            return;
         }
 
         // Remove previous messages to obtain the prompt to generate the
@@ -341,15 +306,7 @@ int main( void ) {
             fflush( stdout );
 
             if ( response == ANNULED_CONTEXT_MESSAGE ) {
-                // Skip pushing it into messages, don’t add assistant message
-                prev_len = 0;
-
-                // Clear the KV cache so the model forgets everything:
-                llama_kv_self_clear( ctx );
-
-                messages.clear();
-
-                continue;
+                break;
             }
         }
 
@@ -362,7 +319,7 @@ int main( void ) {
         if ( prev_len < 0 ) {
             log( "Failed to apply the chat template\n" );
 
-            return ( 1 );
+            return;
         }
     }
 
@@ -373,6 +330,50 @@ int main( void ) {
 
     llama_sampler_free( smpl );
     llama_free( ctx );
+}
+
+int main( void ) {
+    // Only print errors
+    llama_log_set(
+        []( enum ggml_log_level _level, const char* _text, void* _data ) {
+            if ( _level >= GGML_LOG_LEVEL_ERROR ) {
+                fprintf( stderr, "%s", _text );
+            }
+        },
+        nullptr );
+
+    // Load dynamic backends
+    ggml_backend_load_all();
+
+    // Initialize the model
+    llama_model_params model_params = llama_model_default_params();
+    model_params.n_gpu_layers = GPU_LAYERS;
+
+    char* modelPath = getApplicationDirectoryAbsolutePath();
+
+    concatBeforeAndAfterString( &modelPath, NULL, MODEL_PATH );
+
+    llama_model* model = llama_model_load_from_file( modelPath, model_params );
+
+    free( modelPath );
+
+    if ( !model ) {
+        log( "Unable to load model\n" );
+
+        return ( 1 );
+    }
+
+    const llama_vocab* vocab = llama_model_get_vocab( model );
+
+    // Initialize the context
+    llama_context_params ctx_params = llama_context_default_params();
+    ctx_params.n_ctx = CONTEXT_SIZE;
+    ctx_params.n_batch = CONTEXT_SIZE;
+
+    while ( true ) {
+        chat( model, vocab, ctx_params );
+    }
+
     llama_model_free( model );
 
     return ( 0 );

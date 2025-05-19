@@ -316,6 +316,19 @@ static char* llm_generate( const char* _prompt ) {
 
     l_response[ l_readAmount ] = '\0';
 
+    // Replace all " with '
+    {
+        char* l_symbol = l_response;
+
+        while ( *l_symbol ) {
+            if ( *l_symbol == '"' ) {
+                *l_symbol = '\'';
+            }
+
+            l_symbol++;
+        }
+    }
+
     log( "LLM Response: %s", l_response );
     printf( "LLM Response: %s", l_response );
 

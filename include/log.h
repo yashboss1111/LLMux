@@ -7,6 +7,8 @@
 // Configuration
 #define LOG_FILE_PATH "log.txt"
 
+#if defined( DEBUG )
+
 // Debug log
 #define DEBUG_INFORMATION_FORMAT \
     "File '%s': line %u in function '%s' | Message: "
@@ -24,3 +26,9 @@
 } while( 0 )
 
 #define log logError
+
+#else
+
+#define log
+
+#endif

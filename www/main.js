@@ -34,14 +34,15 @@ document.getElementById( "chat-form" )
             body : JSON.stringify( { prompt } ),
         } )
             .then( ( response ) => response.text() )
-            .then(
-                ( text ) =>
-                    text.replace( /<\|im_start\|>[^\n]*\n|<\|im_end\|>/g, '' )
-                        .replaceAll( "\n", "__NEW_LINE__" )
-                        .replace( /\s+/g, " " ) )
+            .then( ( text ) =>
+                       text.replace( /<\|im_(start|end)\|>[^\n]*\n/g, '' )
+                           .replaceAll( "\n", "__NEW_LINE__" )
+                           .replace( /\s+/g, " " ) )
             .then( ( data ) => {
-                appendMessage( "bot", JSON.parse( data ).response.replaceAll(
-                                          "__NEW_LINE__", "\n" ) );
+                appendMessage( "bot",
+                               JSON.parse( data )
+                                   .response.replaceAll( "__NEW_LINE__", "\n" )
+                                   .trim() );
             } )
             .catch( ( error ) => {
                 appendMessage( "bot", "Error: " + error.message );
