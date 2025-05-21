@@ -50,7 +50,7 @@ LLMux makes running a local LLM chat easier by providing Tailwind‑powered web 
 ## Setup
 
 1. **Obtain a model** compatible with `llama.cpp` ( e.g. a `.gguf` file ) and place it in the `models/` directory.
-1. **( Optional )** If you don't use the example C++ chat app ( `llm\_chat` aka `llm.cpp` ), update its `LLM\_CHAT\_EXECUTABLE\_NAME` to match your chosen binary.
+1. **( Optional )** If you don't use the example C++ chat app ( `llm_chat` aka `llm.cpp` ), update its `LLM_CHAT_EXECUTABLE_NAME` to match your chosen binary.
 1. Get [_llama.cpp_](https://github.com/ggml-org/llama.cpp/releases/latest) and [_CivetWeb_](https://github.com/civetweb/civetweb/blob/master/docs/Installing.md).
 1. Run:
     ```bash
@@ -63,7 +63,7 @@ This will:
 
 ## Usage
 
-1. In `out/`, set the `LLM\_CHAT\_EXECUTABLE\_NAME` macro in `server.c` to your chat binary name and re‑build if needed.
+1. In `out/`, set the `LLM_CHAT_EXECUTABLE_NAME` macro in `server.c` to your chat binary name and re‑build if needed.
 1. Start the server:
     ```bash
     ./out/server
