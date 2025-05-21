@@ -57,9 +57,9 @@ LLMux makes running a local LLM chat easier by providing Tailwind‑powered web 
     ./build.sh
     ```
 This will:
-    1. Compile the C server and C++ example chat app
-    1. Place all outputs under `out/`
-    1. Format the source files with `clang-format`
+1. Compile the C server and C++ example chat app
+1. Place all outputs under `out/`
+1. Format the source files with `clang-format`
 
 ## Usage
 
